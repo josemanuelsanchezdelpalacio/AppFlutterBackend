@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-mappings xmlns="https://jakarta.ee/xml/ns/persistence/orm"
+                 version="3.0">
+
+    <entity class="com.iessanalberto.jms.backendapp.entities.UsuariosEntity">
+        <table name="usuarios" schema="public" catalog="presupuesto_db"/>
+        <attributes>
+            <id name="id">
+                <column name="id"/>
+            </id>
+            <basic name="email">
+                <column name="email"/>
+            </basic>
+            <basic name="password">
+                <column name="password"/>
+            </basic>
+            <basic name="authProvider">
+                <column name="auth_provider"/>
+            </basic>
+            <basic name="idUsuarioFirebase">
+                <column name="id_usuario_firebase"/>
+            </basic>
+            <one-to-many name="metasAhorrosById" mapped-by="usuariosByIdUsuario"
+                         target-entity="com.iessanalberto.jms.backendapp.entities.MetasAhorroEntity"/>
+            <one-to-many name="presupuestosById" mapped-by="usuariosByIdUsuario"
+                         target-entity="com.iessanalberto.jms.backendapp.entities.PresupuestosEntity"/>
+            <one-to-many name="transaccionesById" mapped-by="usuariosByIdUsuario"
+                         target-entity="com.iessanalberto.jms.backendapp.entities.TransaccionesEntity"/>
+        </attributes>
+    </entity>
+</entity-mappings>
