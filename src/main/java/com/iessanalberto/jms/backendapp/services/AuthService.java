@@ -89,5 +89,23 @@ public class AuthService {
 
         return new AuthResponseDTO(true, user.getEmail(), "Login con Google correcto", user.getId());
     }
+
+    public AuthResponseDTO solicitarRecuperacionContrasenia(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new RuntimeException("El email es requerido");
+        }
+
+        UsuariosEntity usuario = authRepository.buscarPorEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (usuario.getAuthProvider() != AuthProvider.LOCAL) {
+            throw new RuntimeException("Este usuario no puede restablecer su contraseña ya que usa " +
+                    usuario.getAuthProvider().toString());
+        }
+
+        // No need to send email here as the Flutter client will handle it with Firebase
+        return new AuthResponseDTO(true, usuario.getEmail(),
+                "Solicitud de recuperación de contraseña aprobada", usuario.getId());
+    }
 }
 
