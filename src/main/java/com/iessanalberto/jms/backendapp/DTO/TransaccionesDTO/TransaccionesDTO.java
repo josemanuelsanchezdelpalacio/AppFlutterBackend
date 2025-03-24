@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TransaccionesDTO {
     private Long id;
+    private String nombre;
     private BigDecimal cantidad;
     private String descripcion;
     private TipoTransacciones tipoTransaccion;
@@ -21,6 +22,6 @@ public class TransaccionesDTO {
     private Boolean transaccionRecurrente;
     private String frecuenciaRecurrencia;
     private LocalDateTime fechaFinalizacionRecurrencia;
+    private String imagenUrl;
 }
-
 

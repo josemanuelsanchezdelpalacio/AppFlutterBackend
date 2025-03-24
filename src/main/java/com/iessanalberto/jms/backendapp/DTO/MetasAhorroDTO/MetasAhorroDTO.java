@@ -6,7 +6,6 @@ import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 @Data
 @NoArgsConstructor
@@ -20,4 +19,5 @@ public class MetasAhorroDTO {
     private LocalDate fechaObjetivo;
     private boolean completada;
 }
+
 

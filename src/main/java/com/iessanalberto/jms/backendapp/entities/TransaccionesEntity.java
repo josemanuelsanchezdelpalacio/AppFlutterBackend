@@ -1,52 +1,51 @@
 package com.iessanalberto.jms.backendapp.entities;
 
 import com.iessanalberto.jms.backendapp.DTO.TransaccionesDTO.TipoTransacciones;
+import com.iessanalberto.jms.backendapp.services.EncriptacionService;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
-@Data
 @Entity
 @Table(name = "transacciones", schema = "public", catalog = "presupuesto_db")
 public class TransaccionesEntity {
-    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "id_usuario", nullable = false)
-    private UsuariosEntity usuario;
+    @Basic
+    @Convert(converter = EncriptacionService.StringEncryptionConverter.class)
+    @Column(name = "nombre")
+    private String nombre;
 
     @Basic
-    @Column(name = "cantidad", nullable = false)
+    @Convert(converter = EncriptacionService.BigDecimalEncryptionConverter.class)
+    @Column(name = "cantidad")
     private BigDecimal cantidad;
 
     @Basic
-    @Column(name = "descripcion", nullable = false)
+    @Convert(converter = EncriptacionService.StringEncryptionConverter.class)
+    @Column(name = "descripcion")
     private String descripcion;
 
     @Basic
+    @Column(name = "tipo")
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo", nullable = false)
     private TipoTransacciones tipo;
 
     @Basic
-    @Column(name = "categoria", nullable = false)
+    @Column(name = "categoria")
     private String categoria;
 
     @Basic
-    @Column(name = "fecha_transaccion", nullable = false)
+    @Column(name = "fecha_transaccion")
     private LocalDate fechaTransaccion;
 
     @Basic
-    @Column(name = "fecha_creacion", nullable = false, updatable = false)
+    @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
     @Basic
@@ -61,13 +60,13 @@ public class TransaccionesEntity {
     @Column(name = "fecha_finalizacion_recurrencia")
     private LocalDateTime fechaFinalizacionRecurrencia;
 
-    @PrePersist
-    protected void onCreate() {
-        if (fechaTransaccion == null) {
-            fechaTransaccion = LocalDate.now();
-        }
-        fechaCreacion = LocalDateTime.now();
-    }
+    @Basic
+    @Column(name = "imagen_url")
+    private String imagenUrl;
+
+    @ManyToOne
+    @JoinColumn(name = "id_usuario", referencedColumnName = "id", nullable = false)
+    private UsuariosEntity usuario;
 
     public Long getId() {
         return id;
@@ -77,12 +76,12 @@ public class TransaccionesEntity {
         this.id = id;
     }
 
-    public UsuariosEntity getUsuario() {
-        return usuario;
+    public String getNombre() {
+        return nombre;
     }
 
-    public void setUsuario(UsuariosEntity usuario) {
-        this.usuario = usuario;
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
     }
 
     public BigDecimal getCantidad() {
@@ -155,6 +154,22 @@ public class TransaccionesEntity {
 
     public void setFechaFinalizacionRecurrencia(LocalDateTime fechaFinalizacionRecurrencia) {
         this.fechaFinalizacionRecurrencia = fechaFinalizacionRecurrencia;
+    }
+
+    public String getImagenUrl() {
+        return imagenUrl;
+    }
+
+    public void setImagenUrl(String imagenUrl) {
+        this.imagenUrl = imagenUrl;
+    }
+
+    public UsuariosEntity getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(UsuariosEntity usuario) {
+        this.usuario = usuario;
     }
 }
 

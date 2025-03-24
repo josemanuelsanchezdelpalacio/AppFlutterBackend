@@ -13,6 +13,5 @@ public interface AuthRepository extends JpaRepository<UsuariosEntity, Long> {
 
     @Query("SELECT u FROM UsuariosEntity u WHERE u.email = :email")
     Optional<UsuariosEntity> buscarPorEmail(@Param("email") String email);
-
 }
 

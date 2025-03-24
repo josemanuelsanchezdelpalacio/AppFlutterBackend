@@ -14,12 +14,14 @@ public class MetasAhorroController {
 
     private final MetasAhorroService metasAhorroService;
 
+    //constructor para inicializar el servicio de metas de ahorro
     public MetasAhorroController(MetasAhorroService metasAhorroService) {
         this.metasAhorroService = metasAhorroService;
     }
 
+    //creo una nueva meta de ahorro para un usuario
     @PostMapping("/crear")
-    public ResponseEntity<?> crearMetasAhorro(
+    public ResponseEntity<Object> crearMetasAhorro(
             @RequestParam(name = "idUsuario") Long idUsuario,
             @RequestBody MetasAhorroDTO dto
     ) {
@@ -31,6 +33,7 @@ public class MetasAhorroController {
         }
     }
 
+    //obtengo la lista de metas de ahorro de un usuario
     @GetMapping("/listar")
     public ResponseEntity<List<MetasAhorroDTO>> obtenerMetasAhorro(@RequestParam Long idUsuario) {
         try {
@@ -41,8 +44,9 @@ public class MetasAhorroController {
         }
     }
 
+    //actualizo una meta de ahorro existente
     @PutMapping("/actualizar")
-    public ResponseEntity<?> actualizarMetasAhorro(
+    public ResponseEntity<Object> actualizarMetasAhorro(
             @RequestParam Long idMetaAhorro,
             @RequestParam Long idUsuario,
             @RequestBody MetasAhorroDTO dto
@@ -55,8 +59,9 @@ public class MetasAhorroController {
         }
     }
 
+    //elimino una meta de ahorro existente
     @DeleteMapping("/eliminar")
-    public ResponseEntity<Void> borrarMetasAhorro(
+    public ResponseEntity<Object> borrarMetasAhorro(
             @RequestParam Long idMetaAhorro,
             @RequestParam Long idUsuario
     ) {

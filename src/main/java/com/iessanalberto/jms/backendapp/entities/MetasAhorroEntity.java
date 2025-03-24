@@ -1,52 +1,57 @@
 package com.iessanalberto.jms.backendapp.entities;
 
+import com.iessanalberto.jms.backendapp.services.EncriptacionService;
 import jakarta.persistence.*;
-import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
 @Entity
 @Table(name = "metas_ahorro", schema = "public", catalog = "presupuesto_db")
 public class MetasAhorroEntity {
-    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "id_usuario", nullable = false)
-    private UsuariosEntity usuario;
+    @Column(name = "id_usuario", insertable = false, updatable = false)
+    private Long usuarioId;
 
     @Basic
-    @Column(name = "nombre", nullable = false)
+    @Column(name = "nombre")
+    @Convert(converter = EncriptacionService.StringEncryptionConverter.class)
     private String nombre;
 
     @Basic
-    @Column(name = "categoria", nullable = false) // Added categoria column
+    @Column(name = "categoria")
     private String categoria;
 
     @Basic
-    @Column(name = "cantidad_objetivo", nullable = false)
+    @Column(name = "cantidad_objetivo")
+    @Convert(converter = EncriptacionService.BigDecimalEncryptionConverter.class)
     private BigDecimal cantidadObjetivo;
 
     @Basic
-    @Column(name = "cantidad_actual", nullable = false)
+    @Column(name = "cantidad_actual")
+    @Convert(converter = EncriptacionService.BigDecimalEncryptionConverter.class)
     private BigDecimal cantidadActual;
 
     @Basic
-    @Column(name = "fecha_objetivo", nullable = false)
+    @Column(name = "fecha_objetivo")
     private LocalDate fechaObjetivo;
 
     @Basic
-    @Column(name = "completada", nullable = false)
+    @Column(name = "completada")
     private boolean completada;
 
     @Basic
-    @Column(name = "fecha_creacion", nullable = false)
+    @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
+
+    @ManyToOne
+    @JoinColumn(name = "id_usuario", referencedColumnName = "id", nullable = false)
+    private UsuariosEntity usuario;
 
     public Long getId() {
         return id;
@@ -56,12 +61,12 @@ public class MetasAhorroEntity {
         this.id = id;
     }
 
-    public UsuariosEntity getUsuario() {
-        return usuario;
+    public Long getUsuarioId() {
+        return usuarioId;
     }
 
-    public void setUsuario(UsuariosEntity usuario) {
-        this.usuario = usuario;
+    public void setUsuarioId(Long usuarioId) {
+        this.usuarioId = usuarioId;
     }
 
     public String getNombre() {
@@ -119,5 +124,14 @@ public class MetasAhorroEntity {
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
+
+    public UsuariosEntity getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(UsuariosEntity usuario) {
+        this.usuario = usuario;
+    }
 }
+
 

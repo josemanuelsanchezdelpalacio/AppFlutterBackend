@@ -1,56 +1,53 @@
 package com.iessanalberto.jms.backendapp.entities;
 
+import com.iessanalberto.jms.backendapp.services.EncriptacionService;
 import jakarta.persistence.*;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Data
 @Entity
 @Table(name = "presupuestos", schema = "public", catalog = "presupuesto_db")
 public class PresupuestosEntity {
-    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "id_usuario", nullable = false)
-    private UsuariosEntity usuario;
+    @Column(name = "id_usuario", insertable = false, updatable = false)
+    private Long idUsuario;
 
-    @Basic
-    @Column(name = "nombre", nullable = false) // Added nombre column
+    @Column(name = "nombre")
+    @Convert(converter = EncriptacionService.StringEncryptionConverter.class)
     private String nombre;
 
-    @Basic
-    @Column(name = "categoria", nullable = false)
+    @Column(name = "categoria")
     private String categoria;
 
-    @Basic
-    @Column(name = "cantidad", nullable = false)
+    @Column(name = "cantidad")
+    @Convert(converter = EncriptacionService.BigDecimalEncryptionConverter.class)
     private BigDecimal cantidad;
 
-    @Basic
     @Column(name = "cantidad_gastada")
+    @Convert(converter = EncriptacionService.BigDecimalEncryptionConverter.class)
     private BigDecimal cantidadGastada;
 
-    @Basic
     @Column(name = "cantidad_restante")
+    @Convert(converter = EncriptacionService.BigDecimalEncryptionConverter.class)
     private BigDecimal cantidadRestante;
 
-    @Basic
-    @Column(name = "fecha_inicio", nullable = false)
+    @Column(name = "fecha_inicio")
     private LocalDate fechaInicio;
 
-    @Basic
-    @Column(name = "fecha_fin", nullable = false)
+    @Column(name = "fecha_fin")
     private LocalDate fechaFin;
 
-    @Basic
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
+
+    @ManyToOne
+    @JoinColumn(name = "id_usuario", referencedColumnName = "id", nullable = false)
+    private UsuariosEntity usuario;
 
     public Long getId() {
         return id;
@@ -60,12 +57,12 @@ public class PresupuestosEntity {
         this.id = id;
     }
 
-    public UsuariosEntity getUsuario() {
-        return usuario;
+    public Long getIdUsuario() {
+        return idUsuario;
     }
 
-    public void setUsuario(UsuariosEntity usuario) {
-        this.usuario = usuario;
+    public void setIdUsuario(Long idUsuario) {
+        this.idUsuario = idUsuario;
     }
 
     public String getNombre() {
@@ -130,6 +127,14 @@ public class PresupuestosEntity {
 
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
+    }
+
+    public UsuariosEntity getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(UsuariosEntity usuario) {
+        this.usuario = usuario;
     }
 }
 

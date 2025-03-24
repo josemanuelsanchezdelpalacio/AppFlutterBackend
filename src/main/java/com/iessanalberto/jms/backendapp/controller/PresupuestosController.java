@@ -16,10 +16,12 @@ public class PresupuestosController {
 
     private final PresupuestosService presupuestosService;
 
+    //constructor para inicializar el servicio de presupuestos
     public PresupuestosController(PresupuestosService presupuestosService) {
         this.presupuestosService = presupuestosService;
     }
 
+    //creo un nuevo presupuesto para un usuario
     @PostMapping("/crearPresupuesto")
     public ResponseEntity<PresupuestosDTO> crearPresupuesto(
             @RequestParam Long idUsuario,
@@ -33,18 +35,21 @@ public class PresupuestosController {
         }
     }
 
+    //obtengo la lista de presupuestos de un usuario
     @GetMapping("/obtenerPresupuesto")
     public ResponseEntity<?> obtenerPresupuesto(@RequestParam Long idUsuario) {
         try {
             List<PresupuestosDTO> presupuestos = presupuestosService.obtenerPresupuesto(idUsuario);
             return ResponseEntity.ok(presupuestos);
         } catch (Exception e) {
+            //manejo el error devolviendo un mensaje adecuado
             Map<String, String> response = new HashMap<>();
             response.put("error", "Error al obtener presupuestos: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 
+    //actualizo un presupuesto existente
     @PutMapping("/actualizarPresupuesto")
     public ResponseEntity<PresupuestosDTO> actualizarPresupuesto(
             @RequestParam Long idPresupuesto,
@@ -54,6 +59,7 @@ public class PresupuestosController {
         return ResponseEntity.ok(presupuestosService.actualizarPresupuesto(idUsuario, idPresupuesto, dto));
     }
 
+    //elimino un presupuesto existente
     @DeleteMapping("/borrarPresupuesto")
     public ResponseEntity<Void> borrarPresupuesto(
             @RequestParam Long idPresupuesto,
@@ -63,5 +69,4 @@ public class PresupuestosController {
         return ResponseEntity.noContent().build();
     }
 }
-
 

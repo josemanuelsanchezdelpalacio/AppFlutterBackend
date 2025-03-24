@@ -14,10 +14,12 @@ public class AuthController {
 
     private final AuthService authService;
 
+    //constructor para inicializar el servicio de autenticación
     public AuthController(AuthService authService) {
         this.authService = authService;
     }
 
+    //registro de usuario con email y contraseña o Google
     @PostMapping("/registro")
     public ResponseEntity<AuthResponseDTO> registrarUsuario(@RequestBody RegisterRequestDTO request) {
         try {
@@ -27,6 +29,7 @@ public class AuthController {
         }
     }
 
+    //autenticación de usuario con email y contraseña
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> loginUsuario(@RequestBody LoginRequestDTO request) {
         try {
@@ -37,6 +40,7 @@ public class AuthController {
         }
     }
 
+    //autenticación de usuario con Google
     @PostMapping("/loginGoogle")
     public ResponseEntity<AuthResponseDTO> googleAuth(@RequestBody GoogleAuthRequestDTO request) {
         try {
@@ -47,6 +51,7 @@ public class AuthController {
         }
     }
 
+    //solicitud de recuperación de contraseña
     @PostMapping("/solicitar-recuperacion")
     public ResponseEntity<AuthResponseDTO> solicitarRecuperacion(@RequestBody Map<String, String> request) {
         try {
@@ -58,4 +63,3 @@ public class AuthController {
         }
     }
 }
-
