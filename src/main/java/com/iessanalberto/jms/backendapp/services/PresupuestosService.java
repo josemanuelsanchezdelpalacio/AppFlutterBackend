@@ -33,9 +33,7 @@ public class PresupuestosService {
         this.authRepository = authRepository;
     }
 
-    /**
-     * Inicializa un presupuesto calculando los gastos actuales y el saldo restante
-     */
+    //metodo para inicializar un presupuesto calculando los gastos actuales y el saldo restante
     private void inicializarPresupuesto(PresupuestosEntity presupuesto) {
         //calculo la cantidad gastada hasta el momento en esta categoria
         BigDecimal cantidadGastada = calcularCantidadGastada(presupuesto);
@@ -129,28 +127,28 @@ public class PresupuestosService {
     //metodo para actualizar los presupuestos afectados por una nueva transaccion
     @Transactional
     public void actualizarPresupuestosPorTransaccion(Long idUsuario, TransaccionesDTO dto) {
-
-        //solo proceso gastos ignorando ingresos
-        if (dto.getTipoTransaccion() != TipoTransacciones.GASTO) {
+        if (dto.getTipoTransaccion() != TipoTransacciones.GASTO || dto.getPresupuestoId() == null) {
             return;
         }
 
-        //obtengo todos los presupuestos del usuario
-        List<PresupuestosEntity> presupuestos = presupuestosRepository.findByUsuarioId(idUsuario);
+        //busco solo el presupuesto especifico al que esta asignada la transaccion
+        PresupuestosEntity presupuesto = presupuestosRepository.findById(dto.getPresupuestoId())
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado"));
 
-        //actualizo cada presupuesto afectado por la transaccion
-        for (PresupuestosEntity presupuesto : presupuestos) {
-
-            //compruebo si la transaccion afecta a este presupuesto (misma categoria y dentro del periodo)
-            if (dto.getCategoria().equals(presupuesto.getCategoria()) &&
-                    !dto.getFechaTransaccion().isBefore(presupuesto.getFechaInicio()) &&
-                    !dto.getFechaTransaccion().isAfter(presupuesto.getFechaFin())) {
-
-                //recalculo los valores del presupuesto
-                inicializarPresupuesto(presupuesto);
-                presupuestosRepository.save(presupuesto);
-            }
+        //compruebo que el presupuesto pertenece al usuario
+        if (presupuesto.getUsuario().getId() != idUsuario) {
+            throw new RuntimeException("Presupuesto no pertenece al usuario");
         }
+
+        //actualizo solo este presupuesto
+        BigDecimal nuevaCantidadGastada = presupuesto.getCantidadGastada().add(dto.getCantidad());
+        presupuesto.setCantidadGastada(nuevaCantidadGastada);
+
+        BigDecimal nuevaCantidadRestante = presupuesto.getCantidad().subtract(nuevaCantidadGastada);
+        presupuesto.setCantidadRestante(nuevaCantidadRestante.compareTo(BigDecimal.ZERO) < 0 ?
+                BigDecimal.ZERO : nuevaCantidadRestante);
+
+        presupuestosRepository.save(presupuesto);
     }
 
     //metodo para calcular la cantidad total gastada para un presupuesto

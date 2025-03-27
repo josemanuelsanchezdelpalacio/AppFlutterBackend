@@ -64,6 +64,14 @@ public class TransaccionesEntity {
     @Column(name = "imagen_url")
     private String imagenUrl;
 
+    @Basic
+    @Column(name = "presupuesto_id")
+    private Long presupuestoId;
+
+    @Basic
+    @Column(name = "meta_ahorro_id")
+    private Long metaAhorroId;
+
     @ManyToOne
     @JoinColumn(name = "id_usuario", referencedColumnName = "id", nullable = false)
     private UsuariosEntity usuario;
@@ -164,6 +172,22 @@ public class TransaccionesEntity {
         this.imagenUrl = imagenUrl;
     }
 
+    public Long getPresupuestoId() {
+        return presupuestoId;
+    }
+
+    public void setPresupuestoId(Long presupuestoId) {
+        this.presupuestoId = presupuestoId;
+    }
+
+    public Long getMetaAhorroId() {
+        return metaAhorroId;
+    }
+
+    public void setMetaAhorroId(Long metaAhorroId) {
+        this.metaAhorroId = metaAhorroId;
+    }
+
     public UsuariosEntity getUsuario() {
         return usuario;
     }
@@ -172,4 +196,6 @@ public class TransaccionesEntity {
         this.usuario = usuario;
     }
 }
+
+
 

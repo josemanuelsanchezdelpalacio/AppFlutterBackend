@@ -23,5 +23,7 @@ public class TransaccionesDTO {
     private String frecuenciaRecurrencia;
     private LocalDateTime fechaFinalizacionRecurrencia;
     private String imagenUrl;
+    private Long presupuestoId;
+    private Long metaAhorroId;
 }
 

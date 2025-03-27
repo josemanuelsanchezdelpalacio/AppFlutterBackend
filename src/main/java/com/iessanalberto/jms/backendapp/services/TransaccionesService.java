@@ -65,6 +65,7 @@ public class TransaccionesService {
 
         TransaccionesEntity transaccion = new TransaccionesEntity();
         transaccion.setUsuario(usuario);
+        transaccion.setNombre(dto.getNombre());
         transaccion.setCantidad(dto.getCantidad());
         transaccion.setDescripcion(dto.getDescripcion());
         transaccion.setTipo(dto.getTipoTransaccion());
@@ -75,14 +76,27 @@ public class TransaccionesService {
         transaccion.setFrecuenciaRecurrencia(dto.getFrecuenciaRecurrencia());
         transaccion.setFechaFinalizacionRecurrencia(dto.getFechaFinalizacionRecurrencia());
 
+        // Asignar presupuesto o meta si existen
+        if (dto.getPresupuestoId() != null) {
+            transaccion.setPresupuestoId(dto.getPresupuestoId());
+        }
+        if (dto.getMetaAhorroId() != null) {
+            transaccion.setMetaAhorroId(dto.getMetaAhorroId());
+        }
+
         if (imagen != null && !imagen.isEmpty()) {
             String imagenUrl = guardarImagen(imagen);
             transaccion.setImagenUrl(imagenUrl);
         }
 
         TransaccionesEntity transaccionGuardada = transaccionesRepository.save(transaccion);
+
+        // Actualizar presupuesto/meta después de guardar la transacción
+        actualizarMetasYPresupuestos(idUsuario, dto);
+
         return convertirDTO(transaccionGuardada);
     }
+
 
     //metodo para actualizar una transaccion
     @Transactional
@@ -140,19 +154,25 @@ public class TransaccionesService {
     }
 
     private void actualizarMetasYPresupuestos(Long idUsuario, TransaccionesDTO dto) {
-        //actualizar metas de ahorro
-        metasAhorroService.actualizarMetasPorTransaccion(idUsuario, dto);
+        // Solo actualizar si tiene un ID específico asignado
+        if (dto.getPresupuestoId() != null) {
+            presupuestosService.actualizarPresupuestosPorTransaccion(idUsuario, dto);
+        }
 
-        //actualizar presupuestos
-        presupuestosService.actualizarPresupuestosPorTransaccion(idUsuario, dto);
+        if (dto.getMetaAhorroId() != null) {
+            metasAhorroService.actualizarMetasPorTransaccion(idUsuario, dto);
+        }
     }
 
     private void revertirEfectosTransaccion(Long idUsuario, TransaccionesDTO dto) {
-        //revertir efectos en metas de ahorro
-        metasAhorroService.revertirEfectoTransaccion(idUsuario, dto);
+        // Solo revertir si tenía un ID específico asignado
+        if (dto.getPresupuestoId() != null) {
+            presupuestosService.revertirEfectoTransaccion(idUsuario, dto);
+        }
 
-        //revertir efectos en presupuestos
-        presupuestosService.revertirEfectoTransaccion(idUsuario, dto);
+        if (dto.getMetaAhorroId() != null) {
+            metasAhorroService.revertirEfectoTransaccion(idUsuario, dto);
+        }
     }
 
     private TransaccionesDTO convertirDTO(TransaccionesEntity transaccion) {
@@ -167,7 +187,9 @@ public class TransaccionesService {
                 transaccion.getTransaccionRecurrente(),
                 transaccion.getFrecuenciaRecurrencia(),
                 transaccion.getFechaFinalizacionRecurrencia(),
-                transaccion.getImagenUrl()
+                transaccion.getImagenUrl(),
+                transaccion.getMetaAhorroId(),
+                transaccion.getPresupuestoId()
         );
     }
 

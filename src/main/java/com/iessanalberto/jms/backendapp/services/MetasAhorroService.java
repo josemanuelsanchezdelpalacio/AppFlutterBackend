@@ -105,7 +105,7 @@ public class MetasAhorroService {
         MetasAhorroEntity metaAhorro = metasAhorroRepository.findById(idMetaAhorro)
                 .orElseThrow(() -> new RuntimeException("Meta de ahorro no encontrada"));
 
-        //verifico que la meta pertenezca al usuario
+        //compruebo que la meta pertenezca al usuario
         if (metaAhorro.getUsuario().getId() != idUsuario) {
             throw new RuntimeException("No autorizado para actualizar la meta de ahorro");
         }
@@ -131,7 +131,7 @@ public class MetasAhorroService {
         MetasAhorroEntity metaAhorro = metasAhorroRepository.findById(idMetaAhorro)
                 .orElseThrow(() -> new RuntimeException("Meta de ahorro no encontrada"));
 
-        //verifico que la meta pertenezca al usuario
+        //compruebo que la meta pertenezca al usuario
         if (metaAhorro.getUsuario().getId() != idUsuario) {
             throw new RuntimeException("No autorizado para eliminar esta meta");
         }
@@ -142,29 +142,30 @@ public class MetasAhorroService {
 
     //actualizo las metas de ahorro afectadas por una nueva transaccion
     @Transactional
-    public void actualizarMetasPorTransaccion(Long idUsuario, TransaccionesDTO transaccion) {
-        //solo actualizo metas si es un ingreso
-        if (transaccion.getTipoTransaccion() != TipoTransacciones.INGRESO) {
+    public void actualizarMetasPorTransaccion(Long idUsuario, TransaccionesDTO dto) {
+        if (dto.getTipoTransaccion() != TipoTransacciones.INGRESO || dto.getMetaAhorroId() == null) {
             return;
         }
 
-        //obtengo todas las metas no completadas del usuario
-        List<MetasAhorroEntity> metas = metasAhorroRepository.findByUsuarioIdAndCompletadaFalse(idUsuario);
+        //busco solo la meta especifica a la que esta asignada la transaccion
+        MetasAhorroEntity meta = metasAhorroRepository.findById(dto.getMetaAhorroId())
+                .orElseThrow(() -> new RuntimeException("Meta de ahorro no encontrada"));
 
-        //actualizo cada meta afectada
-        for (MetasAhorroEntity meta : metas) {
-            //sumo la cantidad de la transaccion a la cantidad actual
-            BigDecimal nuevaCantidadActual = meta.getCantidadActual().add(transaccion.getCantidad());
-            meta.setCantidadActual(nuevaCantidadActual);
-
-            //verifico si se ha alcanzado la meta
-            if (nuevaCantidadActual.compareTo(meta.getCantidadObjetivo()) >= 0) {
-                meta.setCompletada(true);
-            }
-
-            //guardo la meta actualizada
-            metasAhorroRepository.save(meta);
+        //compruebo que la meta pertenece al usuario
+        if (meta.getUsuario().getId() != idUsuario) {
+            throw new RuntimeException("Meta no pertenece al usuario");
         }
+
+        //actualizo solo esta meta
+        BigDecimal nuevaCantidadActual = meta.getCantidadActual().add(dto.getCantidad());
+        meta.setCantidadActual(nuevaCantidadActual);
+
+        //compruebo si se ha alcanzado la meta
+        if (nuevaCantidadActual.compareTo(meta.getCantidadObjetivo()) >= 0) {
+            meta.setCompletada(true);
+        }
+
+        metasAhorroRepository.save(meta);
     }
 
     //revierto los efectos de una transaccion en las metas de ahorro
