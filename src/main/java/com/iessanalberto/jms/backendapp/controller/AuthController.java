@@ -56,7 +56,8 @@ public class AuthController {
     public ResponseEntity<AuthResponseDTO> solicitarRecuperacion(@RequestBody Map<String, String> request) {
         try {
             String email = request.get("email");
-            return ResponseEntity.ok(authService.solicitarRecuperacionContrasenia(email));
+            AuthResponseDTO response = authService.solicitarRecuperacionContrasenia(email);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
                     .body(new AuthResponseDTO(false, null, e.getMessage(), null));

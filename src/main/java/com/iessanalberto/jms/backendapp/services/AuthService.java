@@ -108,24 +108,32 @@ public class AuthService {
 
     //solicitud de recuperacion de contraseña
     public AuthResponseDTO solicitarRecuperacionContrasenia(String email) {
-        //verifico si el email es valido
-        if (email == null || email.trim().isEmpty()) {
-            throw new RuntimeException("El email es requerido");
+        // Validación más estricta del email
+        if (email == null || email.trim().isEmpty() || !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            throw new RuntimeException("El email proporcionado no es válido");
         }
 
-        //busco usuario en la base de datos
+        //busco al usuario en la base de datos
         UsuariosEntity usuario = authRepository.buscarPorEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException("No existe un usuario registrado con este email"));
 
-        //verifico si el usuario tiene autenticación local
+        //compruebo que el usuario sea local
         if (usuario.getAuthProvider() != AuthProvider.LOCAL) {
             throw new RuntimeException("Este usuario no puede restablecer su contraseña ya que usa " +
-                    usuario.getAuthProvider().toString());
+                    usuario.getAuthProvider().toString() + ". Por favor, inicie sesión con ese método.");
         }
 
-        //devuelvo respuesta sin enviar correo ya que lo maneja el cliente Flutter con Firebase
-        return new AuthResponseDTO(true, usuario.getEmail(),
-                "Solicitud de recuperación de contraseña aprobada", usuario.getId());
+        //compruebo que el usuario tenga una contraseña establecida
+        if (usuario.getPassword() == null || usuario.getPassword().isEmpty()) {
+            throw new RuntimeException("Este usuario no tiene una contraseña establecida");
+        }
+
+        return new AuthResponseDTO(
+                true,
+                usuario.getEmail(),
+                "Se ha enviado un enlace de recuperación a tu correo electrónico.",
+                usuario.getId()
+        );
     }
 }
 
