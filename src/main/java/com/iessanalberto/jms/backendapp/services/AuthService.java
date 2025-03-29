@@ -109,7 +109,7 @@ public class AuthService {
     //solicitud de recuperacion de contraseña
     public AuthResponseDTO solicitarRecuperacionContrasenia(String email) {
         // Validación más estricta del email
-        if (email == null || email.trim().isEmpty() || !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+        if (email == null || email.trim().isEmpty() || !email.matches("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
             throw new RuntimeException("El email proporcionado no es válido");
         }
 
