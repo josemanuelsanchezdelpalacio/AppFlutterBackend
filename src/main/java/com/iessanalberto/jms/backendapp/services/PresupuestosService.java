@@ -211,24 +211,27 @@ public class PresupuestosService {
     //revierto los efectos de una transaccion (para actualizaciones o eliminaciones)
     @Transactional
     public void revertirEfectoTransaccion(Long idUsuario, TransaccionesDTO dto) {
-
         if (dto.getTipoTransaccion() != TipoTransacciones.GASTO) {
             return;
         }
 
-        //busco los presupuestos afectados por la transaccion
-        List<PresupuestosEntity> presupuestos = presupuestosRepository.findByUsuarioId(idUsuario)
-                .stream()
-                //filtro los presupuestos que coinciden con la categoria y periodo de la transaccion
-                .filter(p -> p.getCategoria().equals(dto.getCategoria()) &&
-                        !dto.getFechaTransaccion().isBefore(p.getFechaInicio()) &&
-                        !dto.getFechaTransaccion().isAfter(p.getFechaFin()))
-                .collect(Collectors.toList());
+        // Si tiene un presupuesto específico asignado, solo revertimos ese
+        if (dto.getPresupuestoId() != null) {
+            PresupuestosEntity presupuesto = presupuestosRepository.findById(dto.getPresupuestoId())
+                    .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado"));
 
-        //actualizo cada presupuesto afectado
-        for (PresupuestosEntity presupuesto : presupuestos) {
-            //recalculo los valores tras revertir la transaccion
-            inicializarPresupuesto(presupuesto);
+            if (presupuesto.getUsuario().getId() != idUsuario) {
+                throw new RuntimeException("Presupuesto no pertenece al usuario");
+            }
+
+            BigDecimal cantidadRevertida = presupuesto.getCantidadGastada().subtract(dto.getCantidad());
+            presupuesto.setCantidadGastada(cantidadRevertida.compareTo(BigDecimal.ZERO) < 0 ?
+                    BigDecimal.ZERO : cantidadRevertida);
+
+            BigDecimal nuevaCantidadRestante = presupuesto.getCantidad().subtract(presupuesto.getCantidadGastada());
+            presupuesto.setCantidadRestante(nuevaCantidadRestante.compareTo(BigDecimal.ZERO) < 0 ?
+                    BigDecimal.ZERO : nuevaCantidadRestante);
+
             presupuestosRepository.save(presupuesto);
         }
     }

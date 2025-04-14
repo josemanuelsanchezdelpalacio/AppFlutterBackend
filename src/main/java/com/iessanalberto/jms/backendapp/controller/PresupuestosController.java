@@ -51,12 +51,19 @@ public class PresupuestosController {
 
     //actualizo un presupuesto existente
     @PutMapping("/actualizarPresupuesto")
-    public ResponseEntity<PresupuestosDTO> actualizarPresupuesto(
+    public ResponseEntity<?> actualizarPresupuesto(
             @RequestParam Long idPresupuesto,
             @RequestParam Long idUsuario,
             @RequestBody PresupuestosDTO dto
     ) {
-        return ResponseEntity.ok(presupuestosService.actualizarPresupuesto(idUsuario, idPresupuesto, dto));
+        try {
+            PresupuestosDTO result = presupuestosService.actualizarPresupuesto(idUsuario, idPresupuesto, dto);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Error al actualizar presupuesto: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     //elimino un presupuesto existente

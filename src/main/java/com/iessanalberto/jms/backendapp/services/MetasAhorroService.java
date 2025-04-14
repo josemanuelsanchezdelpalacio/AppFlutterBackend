@@ -11,6 +11,8 @@ import com.iessanalberto.jms.backendapp.repository.MetasAhorroRepository;
 import com.iessanalberto.jms.backendapp.repository.TransaccionesRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -20,6 +22,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class MetasAhorroService {
+
+    private static final Logger logger = LoggerFactory.getLogger(MetasAhorroService.class);
 
     private final TransaccionesRepository transaccionesRepository;
     private final MetasAhorroRepository metasAhorroRepository;
@@ -45,6 +49,19 @@ public class MetasAhorroService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    // Calcula la cantidad actual acumulada de una meta específica basada en transacciones asociadas
+    private BigDecimal calcularCantidadActualMeta(Long idUsuario, Long idMeta) {
+        return transaccionesRepository.buscarPorUsuarioId(idUsuario)
+                .stream()
+                // Filtro solo ingresos asociados a esta meta específica
+                .filter(t -> t.getTipo() == TipoTransacciones.INGRESO &&
+                        idMeta.equals(t.getMetaAhorroId()))
+                // Extraigo la cantidad de cada transaccion
+                .map(TransaccionesEntity::getCantidad)
+                // Sumo todas las cantidades
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
     //convierto una entidad de meta de ahorro a DTO
     private MetasAhorroDTO convertirDTO(MetasAhorroEntity meta) {
         return new MetasAhorroDTO(
@@ -60,8 +77,23 @@ public class MetasAhorroService {
 
     //obtengo todas las metas de ahorro de un usuario
     public List<MetasAhorroDTO> obtenerMetasAhorro(Long idUsuario) {
-        return metasAhorroRepository.findByUsuarioId(idUsuario)
-                .stream()
+        List<MetasAhorroEntity> metas = metasAhorroRepository.findByUsuarioId(idUsuario);
+
+        // Actualizar cada meta con la cantidad actual calculada desde las transacciones
+        metas.forEach(meta -> {
+            // Recalcular cantidad actual basada en transacciones asociadas
+            BigDecimal cantidadActual = calcularCantidadActualMeta(idUsuario, meta.getId());
+            meta.setCantidadActual(cantidadActual);
+
+            // Actualizar estado completado
+            boolean completada = cantidadActual.compareTo(meta.getCantidadObjetivo()) >= 0;
+            meta.setCompletada(completada);
+
+            // Guardar cambios
+            metasAhorroRepository.save(meta);
+        });
+
+        return metas.stream()
                 //convierto cada entidad a DTO
                 .map(this::convertirDTO)
                 .collect(Collectors.toList());
@@ -87,13 +119,7 @@ public class MetasAhorroService {
         //guardo la meta en la base de datos
         MetasAhorroEntity metaGuardada = metasAhorroRepository.save(metaAhorro);
 
-        //calculo la cantidad actual inicial de ingresos
-        BigDecimal cantidadActualInicial = calcularCantidadActualInicial(idUsuario, LocalDate.now());
-        metaGuardada.setCantidadActual(cantidadActualInicial);
-        //verifico si la meta ya esta completada
-        metaGuardada.setCompletada(cantidadActualInicial.compareTo(metaGuardada.getCantidadObjetivo()) >= 0);
-        //guardo la meta actualizada
-        metaGuardada = metasAhorroRepository.save(metaGuardada);
+        logger.info("Meta de ahorro creada con ID: {}", metaGuardada.getId());
 
         //devuelvo la meta como DTO
         return convertirDTO(metaGuardada);
@@ -110,16 +136,23 @@ public class MetasAhorroService {
             throw new RuntimeException("No autorizado para actualizar la meta de ahorro");
         }
 
+        logger.info("Actualizando meta de ahorro ID: {} - Valores anteriores: objetivo={}, actual={}, completada={}",
+                idMetaAhorro, metaAhorro.getCantidadObjetivo(), metaAhorro.getCantidadActual(), metaAhorro.isCompletada());
+
         //actualizo los campos de la meta con los valores del DTO
         metaAhorro.setNombre(dto.getNombre());
         metaAhorro.setCategoria(dto.getCategoria());
         metaAhorro.setCantidadObjetivo(dto.getCantidadObjetivo());
         metaAhorro.setCantidadActual(dto.getCantidadActual());
         metaAhorro.setFechaObjetivo(dto.getFechaObjetivo());
-        metaAhorro.setCompletada(dto.isCompletada());
+        metaAhorro.setCompletada(dto.getCantidadActual().compareTo(dto.getCantidadObjetivo()) >= 0);
 
         //guardo la meta actualizada
         MetasAhorroEntity metaActualizada = metasAhorroRepository.save(metaAhorro);
+
+        logger.info("Meta de ahorro actualizada - Nuevos valores: objetivo={}, actual={}, completada={}",
+                metaActualizada.getCantidadObjetivo(), metaActualizada.getCantidadActual(), metaActualizada.isCompletada());
+
         //devuelvo la meta como DTO
         return convertirDTO(metaActualizada);
     }
@@ -135,6 +168,8 @@ public class MetasAhorroService {
         if (metaAhorro.getUsuario().getId() != idUsuario) {
             throw new RuntimeException("No autorizado para eliminar esta meta");
         }
+
+        logger.info("Eliminando meta de ahorro ID: {}", idMetaAhorro);
 
         //elimino la meta
         metasAhorroRepository.delete(metaAhorro);
@@ -156,43 +191,98 @@ public class MetasAhorroService {
             throw new RuntimeException("Meta no pertenece al usuario");
         }
 
+        logger.info("Actualizando meta ID: {} por transacción. Cantidad actual: {}, Añadiendo: {}",
+                meta.getId(), meta.getCantidadActual(), dto.getCantidad());
+
         //actualizo solo esta meta
         BigDecimal nuevaCantidadActual = meta.getCantidadActual().add(dto.getCantidad());
         meta.setCantidadActual(nuevaCantidadActual);
 
         //compruebo si se ha alcanzado la meta
-        if (nuevaCantidadActual.compareTo(meta.getCantidadObjetivo()) >= 0) {
-            meta.setCompletada(true);
-        }
+        boolean completada = nuevaCantidadActual.compareTo(meta.getCantidadObjetivo()) >= 0;
+        meta.setCompletada(completada);
 
         metasAhorroRepository.save(meta);
+
+        logger.info("Meta actualizada. Nueva cantidad: {}, Completada: {}",
+                nuevaCantidadActual, completada);
     }
 
     //revierto los efectos de una transaccion en las metas de ahorro
     @Transactional
     public void revertirEfectoTransaccion(Long idUsuario, TransaccionesDTO transaccion) {
-        //solo revierto efectos si era un ingreso
-        if (transaccion.getTipoTransaccion() != TipoTransacciones.INGRESO) {
+        // Solo revierto efectos si era un ingreso asociado a una meta
+        if (transaccion.getTipoTransaccion() != TipoTransacciones.INGRESO ||
+                transaccion.getMetaAhorroId() == null) {
+            logger.debug("No se revierte efecto - No es ingreso o no tiene meta asociada");
             return;
         }
 
-        //obtengo todas las metas del usuario
-        List<MetasAhorroEntity> metas = metasAhorroRepository.findByUsuarioId(idUsuario);
+        logger.info("Iniciando reversión de transacción: ID={}, Cantidad={}, MetaID={}",
+                transaccion.getId(), transaccion.getCantidad(), transaccion.getMetaAhorroId());
 
-        //revierto cada meta afectada
-        for (MetasAhorroEntity meta : metas) {
-            //resto la cantidad de la transaccion a la cantidad actual
-            BigDecimal cantidadRevertida = meta.getCantidadActual().subtract(transaccion.getCantidad());
-            meta.setCantidadActual(cantidadRevertida);
+        MetasAhorroEntity meta = metasAhorroRepository.findById(transaccion.getMetaAhorroId())
+                .orElseThrow(() -> new RuntimeException("Meta de ahorro no encontrada"));
 
-            //si estaba completada, verifico si ya no lo esta
-            if (meta.isCompletada() && cantidadRevertida.compareTo(meta.getCantidadObjetivo()) < 0) {
-                meta.setCompletada(false);
-            }
-
-            //guardo la meta actualizada
-            metasAhorroRepository.save(meta);
+        if (meta.getUsuario().getId() != idUsuario) {
+            logger.error("Error de seguridad: Meta {} no pertenece al usuario {}",
+                    meta.getId(), idUsuario);
+            throw new RuntimeException("Meta no pertenece al usuario");
         }
+
+        // Guardar valores anteriores para logging
+        BigDecimal cantidadAnterior = meta.getCantidadActual();
+        boolean completadaAnterior = meta.isCompletada();
+
+        logger.info("Estado actual antes de revertir - Meta ID: {}, Cantidad: {}, Completada: {}",
+                meta.getId(), cantidadAnterior, completadaAnterior);
+
+        // Revertir la cantidad
+        BigDecimal cantidadRevertida = cantidadAnterior.subtract(transaccion.getCantidad());
+        // Asegurar que no sea negativa
+        if (cantidadRevertida.compareTo(BigDecimal.ZERO) < 0) {
+            logger.warn("Cantidad revertida sería negativa, estableciendo a CERO");
+            cantidadRevertida = BigDecimal.ZERO;
+        }
+
+        meta.setCantidadActual(cantidadRevertida);
+
+        // Actualizar estado completado según la nueva cantidad
+        boolean nuevoEstadoCompletado = cantidadRevertida.compareTo(meta.getCantidadObjetivo()) >= 0;
+        meta.setCompletada(nuevoEstadoCompletado);
+
+        // Guardar cambios
+        metasAhorroRepository.save(meta);
+
+        logger.info("Transacción revertida con éxito - Meta ID: {}, Nueva cantidad: {}, Nuevo estado completado: {}",
+                meta.getId(), cantidadRevertida, nuevoEstadoCompletado);
+        logger.info("Cambios realizados: Cantidad {} -> {}, Completada {} -> {}",
+                cantidadAnterior, cantidadRevertida, completadaAnterior, nuevoEstadoCompletado);
+    }
+
+    // Método para recalcular completamente una meta específica (útil para sincronización)
+    @Transactional
+    public void recalcularMeta(Long idUsuario, Long idMeta) {
+        MetasAhorroEntity meta = metasAhorroRepository.findById(idMeta)
+                .orElseThrow(() -> new RuntimeException("Meta de ahorro no encontrada"));
+
+        if (meta.getUsuario().getId() != idUsuario) {
+            throw new RuntimeException("Meta no pertenece al usuario");
+        }
+
+        // Recalcular cantidad actual basada en transacciones asociadas
+        BigDecimal cantidadCalculada = calcularCantidadActualMeta(idUsuario, idMeta);
+        meta.setCantidadActual(cantidadCalculada);
+
+        // Actualizar estado completado
+        meta.setCompletada(cantidadCalculada.compareTo(meta.getCantidadObjetivo()) >= 0);
+
+        // Guardar cambios
+        metasAhorroRepository.save(meta);
+
+        logger.info("Meta recalculada: ID={}, CantidadActual={}, Completada={}",
+                meta.getId(), meta.getCantidadActual(), meta.isCompletada());
     }
 }
+
 

@@ -31,7 +31,7 @@ import java.net.URLDecoder;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/uploads/images")
+@RequestMapping("/api/transacciones/images")
 public class TransaccionesImagenController {
 
     //directorio de subida de archivos configurado en las propiedades
@@ -113,4 +113,6 @@ public class TransaccionesImagenController {
         return obtenerImagen(imageName);
     }
 }
+
+
 

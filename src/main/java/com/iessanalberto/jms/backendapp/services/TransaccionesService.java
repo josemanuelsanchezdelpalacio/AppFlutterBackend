@@ -1,5 +1,6 @@
 package com.iessanalberto.jms.backendapp.services;
 
+import com.iessanalberto.jms.backendapp.DTO.TransaccionesDTO.TipoTransacciones;
 import org.springframework.beans.factory.annotation.Value;
 import com.iessanalberto.jms.backendapp.entities.TransaccionesEntity;
 import com.iessanalberto.jms.backendapp.DTO.TransaccionesDTO.TransaccionesDTO;
@@ -143,13 +144,16 @@ public class TransaccionesService {
             throw new RuntimeException("No autorizado para eliminar esta transacción");
         }
 
-        //obtengo la transaccion antes de eliminarla
+        // Convertir a DTO antes de eliminar para revertir efectos
         TransaccionesDTO transaccionAEliminar = convertirDTO(transaccion);
 
-        //revierto los efectos de la transaccion
-        revertirEfectosTransaccion(idUsuario, transaccionAEliminar);
+        // Revertir efectos en presupuestos y metas
+        if (transaccion.getTipo() == TipoTransacciones.INGRESO && transaccion.getMetaAhorroId() != null) {
+            metasAhorroService.revertirEfectoTransaccion(idUsuario, transaccionAEliminar);
+        } else if (transaccion.getTipo() == TipoTransacciones.GASTO && transaccion.getPresupuestoId() != null) {
+            presupuestosService.revertirEfectoTransaccion(idUsuario, transaccionAEliminar);
+        }
 
-        //elimino la transaccion
         transaccionesRepository.delete(transaccion);
     }
 
@@ -220,4 +224,5 @@ public class TransaccionesService {
         return nombreArchivo;
     }
 }
+
 
