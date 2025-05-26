@@ -249,7 +249,6 @@ public class TransaccionesService {
             }
         } catch (IOException e) {
             System.err.println("Error al eliminar la imagen " + nombreImagen + ": " + e.getMessage());
-            // No lanzamos excepción para no interrumpir la eliminación de la transacción
         }
     }
 }
