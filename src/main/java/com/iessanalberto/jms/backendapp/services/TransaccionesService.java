@@ -211,7 +211,7 @@ public class TransaccionesService {
         }
     }
 
-    //metodo para guardar la imagen
+    //metodo para guardar las imagenes
     private String guardarImagen(MultipartFile imagen) throws IOException {
         asegurarDirectorioSubidaExiste();
 
