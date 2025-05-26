@@ -154,6 +154,11 @@ public class TransaccionesService {
             presupuestosService.revertirEfectoTransaccion(idUsuario, transaccionAEliminar);
         }
 
+        // Eliminar imagen asociada si existe
+        if (transaccion.getImagenUrl() != null && !transaccion.getImagenUrl().isEmpty()) {
+            eliminarImagen(transaccion.getImagenUrl());
+        }
+
         transaccionesRepository.delete(transaccion);
     }
 
@@ -222,6 +227,30 @@ public class TransaccionesService {
         Files.copy(imagen.getInputStream(), rutaArchivo, StandardCopyOption.REPLACE_EXISTING);
 
         return nombreArchivo;
+    }
+
+    //metodo para eliminar imagen del sistema de archivos
+    private void eliminarImagen(String nombreImagen) {
+        try {
+            Path rutaImagen = Paths.get(directorioSubida).resolve(nombreImagen).normalize();
+
+            // Verificar que la ruta está dentro del directorio de subida por seguridad
+            Path rutaBase = Paths.get(directorioSubida).toAbsolutePath().normalize();
+            if (!rutaImagen.toAbsolutePath().startsWith(rutaBase)) {
+                System.err.println("Intento de eliminar archivo fuera del directorio permitido: " + nombreImagen);
+                return;
+            }
+
+            if (Files.exists(rutaImagen)) {
+                Files.delete(rutaImagen);
+                System.out.println("Imagen eliminada exitosamente: " + nombreImagen);
+            } else {
+                System.out.println("La imagen no existe en el sistema de archivos: " + nombreImagen);
+            }
+        } catch (IOException e) {
+            System.err.println("Error al eliminar la imagen " + nombreImagen + ": " + e.getMessage());
+            // No lanzamos excepción para no interrumpir la eliminación de la transacción
+        }
     }
 }
 
